@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-memo.svg)](https://rubygems.org/gems/philiprehberger-memo)
 [![License](https://img.shields.io/github/license/philiprehberger/rb-memo)](LICENSE)
 
-Practical memoization — `memo` decorator with TTL, LRU eviction, thread-safety, and proper nil/false handling
+Practical memoization with TTL, LRU eviction, and thread-safety
 
 ## Requirements
 
