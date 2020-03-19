@@ -25,7 +25,7 @@ RSpec.describe Philiprehberger::Memo do
       end
       memo :returns_nil
 
-      def compute_negative # rubocop:disable Naming/PredicateMethod
+      def compute_negative
         @call_count += 1
         false
       end
