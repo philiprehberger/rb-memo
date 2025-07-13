@@ -33,6 +33,15 @@ module Philiprehberger
       cache&.clear
     end
 
+    # Return cache stats for a specific memoized method
+    #
+    # @param method_name [Symbol] the method name
+    # @return [Hash, nil] :hits, :misses, :hit_rate or nil if not cached
+    def memo_stats(method_name)
+      cache = memo_cache_for(method_name)
+      cache&.stats
+    end
+
     # Clear all memoized caches on this instance
     def clear_all_memos
       return unless instance_variable_defined?(:@_memo_caches)

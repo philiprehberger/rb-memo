@@ -11,6 +11,8 @@ module Philiprehberger
         @max_size = max_size
         @store = {}
         @mutex = Mutex.new
+        @hits = 0
+        @misses = 0
       end
 
       # Fetch a cached value
@@ -29,22 +31,49 @@ module Philiprehberger
         @mutex.synchronize { store_entry(key, value) }
       end
 
-      # Clear all entries
+      # Current number of cached entries
+      #
+      # @return [Integer]
+      def size
+        @mutex.synchronize { @store.size }
+      end
+
+      # Cache hit/miss statistics
+      #
+      # @return [Hash{Symbol => Numeric}] :hits, :misses, :hit_rate
+      def stats
+        @mutex.synchronize do
+          total = @hits + @misses
+          rate = total.zero? ? 0.0 : @hits.to_f / total
+          { hits: @hits, misses: @misses, hit_rate: rate.round(4) }
+        end
+      end
+
+      # Clear all entries and reset stats
       def clear
-        @mutex.synchronize { @store.clear }
+        @mutex.synchronize do
+          @store.clear
+          @hits = 0
+          @misses = 0
+        end
       end
 
       private
 
       def fetch_entry(key)
-        return [false, nil] unless @store.key?(key)
+        unless @store.key?(key)
+          @misses += 1
+          return [false, nil]
+        end
 
         entry = @store[key]
         if expired?(entry)
           @store.delete(key)
+          @misses += 1
           return [false, nil]
         end
         refresh_lru(key)
+        @hits += 1
         [true, entry[:value]]
       end
 

@@ -7,6 +7,14 @@ and this gem adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-10
+
+### Added
+- `Cache#size` returns the current number of cached entries
+- `Cache#stats` returns `{ hits:, misses:, hit_rate: }` for monitoring cache effectiveness
+- `#memo_stats(method_name)` instance method for per-method cache stats
+- Hit/miss counters tracked per cache, reset on `clear`
+
 ## [0.2.5] - 2026-04-08
 
 ### Changed
@@ -90,3 +98,20 @@ and this gem adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - TTL-based cache expiration
 - LRU eviction with configurable max_size
 - Per-instance thread-safe caches with proper nil/false handling
+
+[0.3.0]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.3.0
+[0.2.5]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.2.5
+[0.2.4]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.2.4
+[0.2.3]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.2.3
+[0.2.2]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.2.2
+[0.2.1]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.2.1
+[0.2.0]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.2.0
+[0.1.9]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.9
+[0.1.8]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.8
+[0.1.7]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.7
+[0.1.6]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.6
+[0.1.5]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.5
+[0.1.4]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.4
+[0.1.3]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.3
+[0.1.2]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.2
+[0.1.0]: https://github.com/philiprehberger/rb-memo/releases/tag/v0.1.0

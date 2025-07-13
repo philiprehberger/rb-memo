@@ -55,6 +55,20 @@ service.clear_memo(:find) # manual invalidation
 service.clear_all_memos   # clear everything
 ```
 
+### Cache Stats
+
+Monitor hit/miss ratios for tuning TTL and max_size:
+
+```ruby
+service = UserService.new
+service.find(1)           # miss
+service.find(1)           # hit
+service.find(2)           # miss
+
+service.memo_stats(:find)
+# => { hits: 1, misses: 2, hit_rate: 0.3333 }
+```
+
 ### Features
 
 - Per-instance caching (not class-level)
@@ -72,6 +86,7 @@ service.clear_all_memos   # clear everything
 |--------|-------------|
 | `memo :method_name, ttl: nil, max_size: nil` | Memoize a method with optional TTL and LRU eviction (class-level) |
 | `#clear_memo(method_name)` | Clear cached results for a specific memoized method |
+| `#memo_stats(method_name)` | Return `{ hits:, misses:, hit_rate: }` for a memoized method |
 | `#clear_all_memos` | Clear all memoized caches on the instance |
 
 ### `Philiprehberger::Memo::Cache`
@@ -81,7 +96,9 @@ service.clear_all_memos   # clear everything
 | `.new(ttl: nil, max_size: nil)` | Create a cache with optional TTL (seconds) and max size |
 | `#get(key)` | Fetch a cached value; returns `[found, value]` |
 | `#set(key, value)` | Store a value in the cache |
-| `#clear` | Remove all entries from the cache |
+| `#size` | Current number of cached entries |
+| `#stats` | Return `{ hits:, misses:, hit_rate: }` |
+| `#clear` | Remove all entries and reset stats |
 
 ### `Philiprehberger::Memo::Wrapper`
 
