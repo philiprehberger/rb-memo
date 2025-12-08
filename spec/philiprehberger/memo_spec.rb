@@ -426,4 +426,256 @@ RSpec.describe Philiprehberger::Memo do
       expect(obj.memo_stats(:nonexistent)).to be_nil
     end
   end
+
+  describe '#memoized?' do
+    it 'returns true once a call has been cached' do
+      obj = klass.new
+      obj.expensive(5)
+      expect(obj.memoized?(:expensive, 5)).to be true
+    end
+
+    it 'returns false before the method has been called' do
+      obj = klass.new
+      expect(obj.memoized?(:expensive, 5)).to be false
+    end
+
+    it 'distinguishes different positional arguments' do
+      obj = klass.new
+      obj.expensive(5)
+      expect(obj.memoized?(:expensive, 5)).to be true
+      expect(obj.memoized?(:expensive, 6)).to be false
+    end
+
+    it 'distinguishes keyword arguments' do
+      obj = klass.new
+      obj.with_kwargs(1, key: 2)
+      expect(obj.memoized?(:with_kwargs, 1, key: 2)).to be true
+      expect(obj.memoized?(:with_kwargs, 1, key: 3)).to be false
+    end
+
+    it 'does not count as a hit or miss' do
+      obj = klass.new
+      obj.expensive(5)
+      before = obj.memo_stats(:expensive).dup
+      obj.memoized?(:expensive, 5)
+      obj.memoized?(:expensive, 99)
+      expect(obj.memo_stats(:expensive)).to eq(before)
+    end
+
+    it 'returns false for un-memoized methods' do
+      obj = klass.new
+      expect(obj.memoized?(:nonexistent)).to be false
+    end
+
+    it 'returns false after a TTL expiry' do
+      ttl_klass = Class.new do
+        include Philiprehberger::Memo
+
+        def timed(arg) = arg
+        memo :timed, ttl: 0.05
+      end
+
+      obj = ttl_klass.new
+      obj.timed(1)
+      expect(obj.memoized?(:timed, 1)).to be true
+      sleep(0.1)
+      expect(obj.memoized?(:timed, 1)).to be false
+    end
+  end
+
+  describe '#cache_size' do
+    it 'returns zero when the method has never been called' do
+      obj = klass.new
+      expect(obj.cache_size(:expensive)).to eq(0)
+    end
+
+    it 'returns the number of distinct cached calls' do
+      obj = klass.new
+      obj.expensive(1)
+      obj.expensive(2)
+      obj.expensive(3)
+      expect(obj.cache_size(:expensive)).to eq(3)
+    end
+
+    it 'does not grow when identical calls are repeated' do
+      obj = klass.new
+      3.times { obj.expensive(1) }
+      expect(obj.cache_size(:expensive)).to eq(1)
+    end
+
+    it 'returns zero for un-memoized methods' do
+      obj = klass.new
+      expect(obj.cache_size(:nonexistent)).to eq(0)
+    end
+
+    it 'respects max_size bounds' do
+      lru_klass = Class.new do
+        include Philiprehberger::Memo
+
+        def limited(arg) = arg
+        memo :limited, max_size: 2
+      end
+
+      obj = lru_klass.new
+      obj.limited(1)
+      obj.limited(2)
+      obj.limited(3)
+      expect(obj.cache_size(:limited)).to eq(2)
+    end
+  end
+
+  describe '#memo_keys' do
+    it 'returns an empty array before any method is called' do
+      obj = klass.new
+      expect(obj.memo_keys).to eq([])
+    end
+
+    it 'lists methods that have been invoked' do
+      obj = klass.new
+      obj.expensive(1)
+      obj.no_args
+      expect(obj.memo_keys).to contain_exactly(:expensive, :no_args)
+    end
+
+    it 'does not include methods that have not been called' do
+      obj = klass.new
+      obj.expensive(1)
+      expect(obj.memo_keys).not_to include(:no_args)
+    end
+  end
+
+  describe '#forget_memo' do
+    it 'removes a single cached entry without touching others' do
+      obj = klass.new
+      obj.expensive(1)
+      obj.expensive(2)
+      expect(obj.forget_memo(:expensive, 1)).to be true
+      expect(obj.memoized?(:expensive, 1)).to be false
+      expect(obj.memoized?(:expensive, 2)).to be true
+    end
+
+    it 'returns false when the entry does not exist' do
+      obj = klass.new
+      obj.expensive(1)
+      expect(obj.forget_memo(:expensive, 99)).to be false
+    end
+
+    it 'returns false for an un-memoized method' do
+      obj = klass.new
+      expect(obj.forget_memo(:nonexistent, 1)).to be false
+    end
+
+    it 'triggers recomputation on the next call' do
+      obj = klass.new
+      obj.expensive(1)
+      obj.forget_memo(:expensive, 1)
+      obj.expensive(1)
+      expect(obj.call_count).to eq(2)
+    end
+
+    it 'handles keyword argument signatures' do
+      obj = klass.new
+      obj.with_kwargs(1, key: 2)
+      expect(obj.forget_memo(:with_kwargs, 1, key: 2)).to be true
+      expect(obj.memoized?(:with_kwargs, 1, key: 2)).to be false
+    end
+  end
+
+  describe 'Cache#key?' do
+    it 'returns false for unknown keys' do
+      cache = Philiprehberger::Memo::Cache.new
+      expect(cache.key?(:missing)).to be false
+    end
+
+    it 'returns true for set keys' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      expect(cache.key?(:a)).to be true
+    end
+
+    it 'returns false once the entry has expired' do
+      cache = Philiprehberger::Memo::Cache.new(ttl: 0.05)
+      cache.set(:a, 1)
+      sleep(0.1)
+      expect(cache.key?(:a)).to be false
+    end
+
+    it 'does not increment hit or miss counters' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.key?(:a)
+      cache.key?(:missing)
+      expect(cache.stats).to eq({ hits: 0, misses: 0, hit_rate: 0.0 })
+    end
+  end
+
+  describe 'Cache#delete' do
+    it 'returns true when an entry is removed' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      expect(cache.delete(:a)).to be true
+    end
+
+    it 'returns false when nothing is removed' do
+      cache = Philiprehberger::Memo::Cache.new
+      expect(cache.delete(:missing)).to be false
+    end
+
+    it 'decreases the cache size' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.set(:b, 2)
+      cache.delete(:a)
+      expect(cache.size).to eq(1)
+    end
+  end
+
+  describe 'Cache#keys' do
+    it 'returns all stored keys in LRU order' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.set(:b, 2)
+      cache.set(:c, 3)
+      expect(cache.keys).to eq(%i[a b c])
+    end
+
+    it 'returns an empty array for a new cache' do
+      cache = Philiprehberger::Memo::Cache.new
+      expect(cache.keys).to eq([])
+    end
+
+    it 'omits expired entries' do
+      cache = Philiprehberger::Memo::Cache.new(ttl: 0.05)
+      cache.set(:a, 1)
+      sleep(0.1)
+      cache.set(:b, 2)
+      expect(cache.keys).to eq([:b])
+    end
+  end
+
+  describe 'Cache#prune_expired' do
+    it 'removes expired entries and returns the count' do
+      cache = Philiprehberger::Memo::Cache.new(ttl: 0.05)
+      cache.set(:a, 1)
+      cache.set(:b, 2)
+      sleep(0.1)
+      cache.set(:c, 3)
+      removed = cache.prune_expired
+      expect(removed).to eq(2)
+      expect(cache.size).to eq(1)
+    end
+
+    it 'returns zero when no TTL is configured' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      expect(cache.prune_expired).to eq(0)
+      expect(cache.size).to eq(1)
+    end
+
+    it 'returns zero when nothing is expired yet' do
+      cache = Philiprehberger::Memo::Cache.new(ttl: 5)
+      cache.set(:a, 1)
+      expect(cache.prune_expired).to eq(0)
+    end
+  end
 end

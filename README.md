@@ -69,6 +69,52 @@ service.memo_stats(:find)
 # => { hits: 1, misses: 2, hit_rate: 0.3333 }
 ```
 
+### Inspecting Cached Calls
+
+Check whether a specific call is already cached, list the methods with live
+caches, and measure per-method cache size without invoking the method.
+
+```ruby
+service = UserService.new
+service.find(1)
+
+service.memoized?(:find, 1) # => true
+service.memoized?(:find, 2) # => false
+service.cache_size(:find)   # => 1
+service.memo_keys           # => [:find]
+```
+
+`memoized?` does not count as a hit or miss in `memo_stats`, so it is safe
+to use in hot paths or test assertions.
+
+### Surgical Invalidation
+
+Drop a single cached call signature without clearing the entire method cache.
+
+```ruby
+service = UserService.new
+service.find(1)
+service.find(2)
+
+service.forget_memo(:find, 1) # => true, only the (1) entry is removed
+service.memoized?(:find, 1)   # => false
+service.memoized?(:find, 2)   # => true
+```
+
+### Pruning Expired Entries
+
+Caches with a TTL can evict expired entries eagerly without resetting stats.
+
+```ruby
+cache = Philiprehberger::Memo::Cache.new(ttl: 60)
+cache.set(:a, 1)
+sleep(61)
+cache.set(:b, 2)
+
+cache.prune_expired # => 1
+cache.keys          # => [:b]
+```
+
 ### Features
 
 - Per-instance caching (not class-level)
@@ -86,8 +132,12 @@ service.memo_stats(:find)
 |--------|-------------|
 | `memo :method_name, ttl: nil, max_size: nil` | Memoize a method with optional TTL and LRU eviction (class-level) |
 | `#clear_memo(method_name)` | Clear cached results for a specific memoized method |
-| `#memo_stats(method_name)` | Return `{ hits:, misses:, hit_rate: }` for a memoized method |
 | `#clear_all_memos` | Clear all memoized caches on the instance |
+| `#memo_stats(method_name)` | Return `{ hits:, misses:, hit_rate: }` for a memoized method |
+| `#memoized?(method_name, *args, **kwargs)` | Return `true` when a non-expired cached value exists for the call |
+| `#cache_size(method_name)` | Number of cached entries for a memoized method (`0` when absent) |
+| `#memo_keys` | Names of methods that currently have caches on this instance |
+| `#forget_memo(method_name, *args, **kwargs)` | Remove a single cached call signature; returns `true` when an entry is dropped |
 
 ### `Philiprehberger::Memo::Cache`
 
@@ -96,8 +146,12 @@ service.memo_stats(:find)
 | `.new(ttl: nil, max_size: nil)` | Create a cache with optional TTL (seconds) and max size |
 | `#get(key)` | Fetch a cached value; returns `[found, value]` |
 | `#set(key, value)` | Store a value in the cache |
+| `#key?(key)` | `true` when a non-expired entry exists; does not affect stats |
+| `#delete(key)` | Remove a specific entry; returns `true` when an entry was removed |
+| `#keys` | All non-expired cache keys in LRU order |
 | `#size` | Current number of cached entries |
 | `#stats` | Return `{ hits:, misses:, hit_rate: }` |
+| `#prune_expired` | Remove all expired entries and return the count removed |
 | `#clear` | Remove all entries and reset stats |
 
 ### `Philiprehberger::Memo::Wrapper`

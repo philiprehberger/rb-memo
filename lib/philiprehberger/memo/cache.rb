@@ -31,11 +31,54 @@ module Philiprehberger
         @mutex.synchronize { store_entry(key, value) }
       end
 
+      # Check whether a non-expired entry exists for a key
+      #
+      # @param key [Object] cache key
+      # @return [Boolean]
+      def key?(key)
+        @mutex.synchronize do
+          return false unless @store.key?(key)
+
+          entry = @store[key]
+          if expired?(entry)
+            @store.delete(key)
+            false
+          else
+            true
+          end
+        end
+      end
+
+      # Remove a specific entry from the cache
+      #
+      # @param key [Object] cache key
+      # @return [Boolean] true if an entry was removed
+      def delete(key)
+        @mutex.synchronize { !@store.delete(key).nil? }
+      end
+
       # Current number of cached entries
       #
       # @return [Integer]
       def size
         @mutex.synchronize { @store.size }
+      end
+
+      # All non-expired cache keys in insertion/LRU order
+      #
+      # @return [Array<Object>]
+      def keys
+        @mutex.synchronize do
+          prune_expired_entries
+          @store.keys
+        end
+      end
+
+      # Remove all expired entries without clearing stats
+      #
+      # @return [Integer] number of entries removed
+      def prune_expired
+        @mutex.synchronize { prune_expired_entries }
       end
 
       # Cache hit/miss statistics
@@ -94,6 +137,21 @@ module Philiprehberger
 
       def evict_lru
         @store.delete(@store.first[0])
+      end
+
+      def prune_expired_entries
+        return 0 unless @ttl
+
+        removed = 0
+        @store.delete_if do |_, entry|
+          if expired?(entry)
+            removed += 1
+            true
+          else
+            false
+          end
+        end
+        removed
       end
     end
   end

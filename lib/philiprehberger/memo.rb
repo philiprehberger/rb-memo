@@ -42,6 +42,50 @@ module Philiprehberger
       cache&.stats
     end
 
+    # Check whether a call signature has been memoized for a method
+    #
+    # @param method_name [Symbol] the method name
+    # @param args [Array] positional arguments used for the call
+    # @param kwargs [Hash] keyword arguments used for the call
+    # @return [Boolean] true if a non-expired cached value exists
+    def memoized?(method_name, *args, **kwargs)
+      cache = memo_cache_for(method_name)
+      return false unless cache
+
+      cache.key?([args, kwargs])
+    end
+
+    # Return the number of cached entries for a memoized method
+    #
+    # @param method_name [Symbol] the method name
+    # @return [Integer] zero when the method has no cache yet
+    def cache_size(method_name)
+      cache = memo_cache_for(method_name)
+      cache ? cache.size : 0
+    end
+
+    # Return the names of methods that currently have caches on this instance
+    #
+    # @return [Array<Symbol>] method names with initialized caches
+    def memo_keys
+      return [] unless instance_variable_defined?(:@_memo_caches)
+
+      @_memo_caches.keys
+    end
+
+    # Remove a specific cached call signature without clearing the full cache
+    #
+    # @param method_name [Symbol] the method name
+    # @param args [Array] positional arguments used for the call
+    # @param kwargs [Hash] keyword arguments used for the call
+    # @return [Boolean] true if an entry was removed, false otherwise
+    def forget_memo(method_name, *args, **kwargs)
+      cache = memo_cache_for(method_name)
+      return false unless cache
+
+      cache.delete([args, kwargs])
+    end
+
     # Clear all memoized caches on this instance
     def clear_all_memos
       return unless instance_variable_defined?(:@_memo_caches)
