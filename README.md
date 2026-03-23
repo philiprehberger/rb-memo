@@ -55,7 +55,7 @@ service.clear_memo(:find) # manual invalidation
 service.clear_all_memos   # clear everything
 ```
 
-## Features
+### Features
 
 - Per-instance caching (not class-level)
 - Handles `nil` and `false` return values correctly
