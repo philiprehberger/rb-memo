@@ -3,6 +3,7 @@
 [![Tests](https://github.com/philiprehberger/rb-memo/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rb-memo/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-memo.svg)](https://rubygems.org/gems/philiprehberger-memo)
 [![License](https://img.shields.io/github/license/philiprehberger/rb-memo)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Practical memoization with TTL, LRU eviction, and thread-safety
 
@@ -105,4 +106,4 @@ bundle exec rubocop
 
 ## License
 
-MIT
+[MIT](LICENSE)

@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Philip Rehberger']
   spec.email         = ['me@philiprehberger.com']
 
-  spec.summary       = 'Practical memoization with TTL, LRU eviction, and thread-safety'
+  spec.summary       = 'Practical memoization — memo decorator with TTL, LRU eviction, thread-safety, and proper nil/false handling'
   spec.description   = 'Memoize methods with a simple decorator. Supports TTL expiration, ' \
                        'LRU eviction, thread-safe per-instance caches, and proper nil/false handling.'
   spec.homepage      = 'https://github.com/philiprehberger/rb-memo'
