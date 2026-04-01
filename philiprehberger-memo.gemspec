@@ -9,9 +9,9 @@ Gem::Specification.new do |spec|
   spec.email = ['me@philiprehberger.com']
 
   spec.summary = 'Practical memoization — memo decorator with TTL, LRU eviction, ' \
-                       'thread-safety, and proper nil/false handling'
+                     'thread-safety, and proper nil/false handling'
   spec.description = 'Memoize methods with a simple decorator. Supports TTL expiration, ' \
-                       'LRU eviction, thread-safe per-instance caches, and proper nil/false handling.'
+                     'LRU eviction, thread-safe per-instance caches, and proper nil/false handling.'
   spec.homepage = 'https://philiprehberger.com/open-source-packages/ruby/philiprehberger-memo'
   spec.license = 'MIT'
 
