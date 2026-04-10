@@ -356,4 +356,74 @@ RSpec.describe Philiprehberger::Memo do
       expect(found_b).to be false
     end
   end
+
+  describe 'Cache#size' do
+    it 'returns current number of entries' do
+      cache = Philiprehberger::Memo::Cache.new
+      expect(cache.size).to eq(0)
+      cache.set(:a, 1)
+      cache.set(:b, 2)
+      expect(cache.size).to eq(2)
+    end
+
+    it 'decreases after clear' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.clear
+      expect(cache.size).to eq(0)
+    end
+  end
+
+  describe 'Cache#stats' do
+    it 'tracks hits and misses' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.get(:a)
+      cache.get(:a)
+      cache.get(:b)
+      stats = cache.stats
+      expect(stats[:hits]).to eq(2)
+      expect(stats[:misses]).to eq(1)
+      expect(stats[:hit_rate]).to be_within(0.001).of(0.6667)
+    end
+
+    it 'returns zero hit_rate when no lookups' do
+      cache = Philiprehberger::Memo::Cache.new
+      expect(cache.stats[:hit_rate]).to eq(0.0)
+    end
+
+    it 'resets stats on clear' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.get(:a)
+      cache.clear
+      expect(cache.stats).to eq({ hits: 0, misses: 0, hit_rate: 0.0 })
+    end
+
+    it 'counts expired lookups as misses' do
+      cache = Philiprehberger::Memo::Cache.new(ttl: 0.01)
+      cache.set(:a, 1)
+      sleep(0.02)
+      cache.get(:a)
+      expect(cache.stats[:misses]).to eq(1)
+      expect(cache.stats[:hits]).to eq(0)
+    end
+  end
+
+  describe '#memo_stats' do
+    it 'returns stats for a memoized method' do
+      obj = klass.new
+      obj.expensive(1)
+      obj.expensive(1)
+      obj.expensive(2)
+      stats = obj.memo_stats(:expensive)
+      expect(stats[:hits]).to eq(1)
+      expect(stats[:misses]).to eq(2)
+    end
+
+    it 'returns nil for un-memoized method' do
+      obj = klass.new
+      expect(obj.memo_stats(:nonexistent)).to be_nil
+    end
+  end
 end
