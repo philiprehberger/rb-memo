@@ -7,6 +7,11 @@ and this gem adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-20
+
+### Added
+- `Cache#age(key)` returns the seconds since an entry was last stored (`nil` when the key is missing or has expired). Does not affect hit/miss stats so it is safe for monitoring hot caches.
+
 ## [0.4.0] - 2026-04-15
 
 ### Added

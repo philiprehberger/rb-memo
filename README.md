@@ -152,6 +152,7 @@ cache.keys          # => [:b]
 | `#size` | Current number of cached entries |
 | `#stats` | Return `{ hits:, misses:, hit_rate: }` |
 | `#prune_expired` | Remove all expired entries and return the count removed |
+| `#age(key)` | Seconds since the entry was stored (`nil` when missing or expired); no hit/miss impact |
 | `#clear` | Remove all entries and reset stats |
 
 ### `Philiprehberger::Memo::Wrapper`

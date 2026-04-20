@@ -92,6 +92,21 @@ module Philiprehberger
         end
       end
 
+      # Seconds since a key was last stored. Returns `nil` when the key is
+      # missing or has expired. Does not count as a hit or a miss.
+      #
+      # @param key [Object] cache key
+      # @return [Float, nil]
+      def age(key)
+        @mutex.synchronize do
+          entry = @store[key]
+          return nil if entry.nil?
+          return nil if expired?(entry)
+
+          Time.now - entry[:time]
+        end
+      end
+
       # Clear all entries and reset stats
       def clear
         @mutex.synchronize do

@@ -678,4 +678,37 @@ RSpec.describe Philiprehberger::Memo do
       expect(cache.prune_expired).to eq(0)
     end
   end
+
+  describe 'Cache#age' do
+    it 'returns nil for missing keys' do
+      cache = Philiprehberger::Memo::Cache.new
+      expect(cache.age(:missing)).to be_nil
+    end
+
+    it 'returns the seconds since the entry was stored' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      sleep(0.05)
+      age = cache.age(:a)
+      expect(age).to be_a(Float)
+      expect(age).to be >= 0.04
+    end
+
+    it 'returns nil for expired entries' do
+      cache = Philiprehberger::Memo::Cache.new(ttl: 0.02)
+      cache.set(:a, 1)
+      sleep(0.05)
+      expect(cache.age(:a)).to be_nil
+    end
+
+    it 'does not record a hit or miss' do
+      cache = Philiprehberger::Memo::Cache.new
+      cache.set(:a, 1)
+      cache.age(:a)
+      cache.age(:missing)
+      stats = cache.stats
+      expect(stats[:hits]).to eq(0)
+      expect(stats[:misses]).to eq(0)
+    end
+  end
 end
