@@ -7,6 +7,11 @@ and this gem adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-01
+
+### Added
+- `total_memo_stats` instance method — aggregates hits/misses across every memoized method on the receiver and returns `{ hits:, misses:, hit_rate:, methods: }`. Returns zeroes when no memoization has occurred yet.
+
 ## [0.5.0] - 2026-04-20
 
 ### Added

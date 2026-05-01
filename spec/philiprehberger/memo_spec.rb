@@ -711,4 +711,36 @@ RSpec.describe Philiprehberger::Memo do
       expect(stats[:misses]).to eq(0)
     end
   end
+
+  describe '#total_memo_stats' do
+    it 'returns zeroes when nothing has been memoized yet' do
+      instance = klass.new
+      expect(instance.total_memo_stats).to eq(hits: 0, misses: 0, hit_rate: 0.0, methods: 0)
+    end
+
+    it 'sums hits and misses across all memoized methods' do
+      instance = klass.new
+      instance.expensive(1)
+      instance.expensive(1)        # hit
+      instance.expensive(2)        # miss
+      instance.no_args
+      instance.no_args              # hit
+
+      stats = instance.total_memo_stats
+      expect(stats[:methods]).to eq(2)
+      expect(stats[:hits] + stats[:misses]).to eq(5)
+      expect(stats[:hits]).to be > 0
+      expect(stats[:misses]).to be > 0
+    end
+
+    it 'computes hit_rate over the combined totals' do
+      instance = klass.new
+      instance.expensive(1)         # miss
+      instance.expensive(1)         # hit
+      instance.expensive(1)         # hit
+
+      stats = instance.total_memo_stats
+      expect(stats[:hit_rate]).to be_within(0.001).of(2.0 / 3.0)
+    end
+  end
 end

@@ -93,6 +93,33 @@ module Philiprehberger
       @_memo_caches.each_value(&:clear)
     end
 
+    # Aggregate hit/miss stats across every memoized method on this instance.
+    #
+    # Returns a hash with totals plus a `methods` count. `hit_rate` is computed
+    # over the combined hits and misses. Returns zeroes when no memoization
+    # has occurred yet.
+    #
+    # @return [Hash] `{ hits:, misses:, hit_rate:, methods: }`
+    def total_memo_stats
+      return { hits: 0, misses: 0, hit_rate: 0.0, methods: 0 } unless instance_variable_defined?(:@_memo_caches)
+
+      hits = 0
+      misses = 0
+      @_memo_caches.each_value do |cache|
+        s = cache.stats
+        hits += s[:hits]
+        misses += s[:misses]
+      end
+
+      total = hits + misses
+      {
+        hits: hits,
+        misses: misses,
+        hit_rate: total.zero? ? 0.0 : hits.to_f / total,
+        methods: @_memo_caches.size
+      }
+    end
+
     private
 
     def memo_cache_for(method_name)

@@ -69,6 +69,15 @@ service.memo_stats(:find)
 # => { hits: 1, misses: 2, hit_rate: 0.3333 }
 ```
 
+### Aggregate Stats Across All Memoized Methods
+
+```ruby
+service.total_memo_stats
+# => { hits: 12, misses: 4, hit_rate: 0.75, methods: 3 }
+```
+
+Useful for dashboarding overall memoization effectiveness without iterating each method.
+
 ### Inspecting Cached Calls
 
 Check whether a specific call is already cached, list the methods with live
@@ -134,6 +143,7 @@ cache.keys          # => [:b]
 | `#clear_memo(method_name)` | Clear cached results for a specific memoized method |
 | `#clear_all_memos` | Clear all memoized caches on the instance |
 | `#memo_stats(method_name)` | Return `{ hits:, misses:, hit_rate: }` for a memoized method |
+| `#total_memo_stats` | Aggregate `{ hits:, misses:, hit_rate:, methods: }` across all memoized methods |
 | `#memoized?(method_name, *args, **kwargs)` | Return `true` when a non-expired cached value exists for the call |
 | `#cache_size(method_name)` | Number of cached entries for a memoized method (`0` when absent) |
 | `#memo_keys` | Names of methods that currently have caches on this instance |
