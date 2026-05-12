@@ -86,6 +86,28 @@ module Philiprehberger
       cache.delete([args, kwargs])
     end
 
+    # Force the memoized method to recompute for the given call signature
+    # and store the freshly-computed value in the cache. Subsequent calls
+    # with the same arguments return the new value from cache.
+    #
+    # The existing cache entry for `[args, kwargs]` (if any) is dropped
+    # before invoking the method, so the wrapper miss-path writes the new
+    # value to the cache automatically.
+    #
+    # @param method_name [Symbol] the method name
+    # @param args [Array] positional arguments to pass through
+    # @param kwargs [Hash] keyword arguments to pass through
+    # @raise [Philiprehberger::Memo::Error] when `method_name` is not memoized
+    # @return [Object] the freshly-computed value
+    def refresh_memo(method_name, *args, **kwargs)
+      unless Wrapper.memoized_method?(self.class, method_name)
+        raise Error, "method `#{method_name}` is not memoized"
+      end
+
+      forget_memo(method_name, *args, **kwargs)
+      send(method_name, *args, **kwargs)
+    end
+
     # Clear all memoized caches on this instance
     def clear_all_memos
       return unless instance_variable_defined?(:@_memo_caches)

@@ -7,6 +7,11 @@ and this gem adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-05-12
+
+### Added
+- `#refresh_memo(method_name, *args, **kwargs)` forces the method to recompute for the given call signature and stores the new value in the cache; returns the freshly-computed value
+
 ## [0.6.0] - 2026-05-01
 
 ### Added

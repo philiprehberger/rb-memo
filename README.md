@@ -148,6 +148,7 @@ cache.keys          # => [:b]
 | `#cache_size(method_name)` | Number of cached entries for a memoized method (`0` when absent) |
 | `#memo_keys` | Names of methods that currently have caches on this instance |
 | `#forget_memo(method_name, *args, **kwargs)` | Remove a single cached call signature; returns `true` when an entry is dropped |
+| `#refresh_memo(method_name, *args, **kwargs)` | Force-recompute the method for these args and cache the new value; returns the new value |
 
 ### `Philiprehberger::Memo::Cache`
 

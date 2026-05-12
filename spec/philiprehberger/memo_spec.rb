@@ -581,6 +581,84 @@ RSpec.describe Philiprehberger::Memo do
     end
   end
 
+  describe '#refresh_memo' do
+    let(:dynamic_klass) do
+      Class.new do
+        include Philiprehberger::Memo
+
+        attr_reader :call_count
+
+        def initialize
+          @call_count = 0
+        end
+
+        def counter(arg)
+          @call_count += 1
+          [arg, @call_count]
+        end
+        memo :counter
+
+        def combined(arg, key:)
+          @call_count += 1
+          { arg: arg, key: key, n: @call_count }
+        end
+        memo :combined
+      end
+    end
+
+    it 'recomputes a previously cached value and overwrites the cache' do
+      obj = dynamic_klass.new
+      first = obj.counter(5)
+      cached = obj.counter(5)
+      expect(cached).to eq(first)
+      expect(obj.call_count).to eq(1)
+
+      refreshed = obj.refresh_memo(:counter, 5)
+      expect(refreshed).to eq([5, 2])
+      expect(obj.call_count).to eq(2)
+
+      # Subsequent calls return the freshly-cached value
+      expect(obj.counter(5)).to eq([5, 2])
+      expect(obj.call_count).to eq(2)
+    end
+
+    it 'computes, caches, and returns when the key was never called before' do
+      obj = dynamic_klass.new
+      value = obj.refresh_memo(:counter, 99)
+      expect(value).to eq([99, 1])
+      expect(obj.memoized?(:counter, 99)).to be true
+      expect(obj.counter(99)).to eq([99, 1])
+      expect(obj.call_count).to eq(1)
+    end
+
+    it 'works with positional and keyword arguments' do
+      obj = dynamic_klass.new
+      obj.combined(1, key: :a)
+      expect(obj.call_count).to eq(1)
+
+      refreshed = obj.refresh_memo(:combined, 1, key: :a)
+      expect(refreshed).to eq({ arg: 1, key: :a, n: 2 })
+      expect(obj.call_count).to eq(2)
+      expect(obj.combined(1, key: :a)).to eq({ arg: 1, key: :a, n: 2 })
+      expect(obj.call_count).to eq(2)
+    end
+
+    it 'does not affect other cached call signatures' do
+      obj = dynamic_klass.new
+      obj.counter(1)
+      obj.counter(2)
+      obj.refresh_memo(:counter, 1)
+      expect(obj.memoized?(:counter, 1)).to be true
+      expect(obj.memoized?(:counter, 2)).to be true
+    end
+
+    it 'raises Philiprehberger::Memo::Error for a non-memoized method' do
+      obj = dynamic_klass.new
+      expect { obj.refresh_memo(:nonexistent, 1) }
+        .to raise_error(Philiprehberger::Memo::Error, /not memoized/)
+    end
+  end
+
   describe 'Cache#key?' do
     it 'returns false for unknown keys' do
       cache = Philiprehberger::Memo::Cache.new
